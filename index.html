@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>سجل السعرات الحرارية</title>
+<style>
+  :root{
+    --bg:#F4F7F5;
+    --card:#FFFFFF;
+    --ink:#1E2A27;
+    --muted:#63756F;
+    --teal:#0E6659;
+    --teal-dark:#0A4F45;
+    --teal-pale:#E3EFEC;
+    --gold:#C08A3B;
+    --red:#C1443B;
+    --red-pale:#FBEAE8;
+    --line:#E2E8E5;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Arabic","Segoe UI",Tahoma,Arial,sans-serif;
+    min-height:100vh;
+    padding-bottom:40px;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:18px 16px 8px;}
+  header.app-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  header.app-head h1{font-size:19px;margin:0;font-weight:800;letter-spacing:-0.2px;}
+  header.app-head .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .icon-btn{
+    width:38px;height:38px;border-radius:50%;border:1px solid var(--line);
+    background:var(--card);display:flex;align-items:center;justify-content:center;
+    font-size:17px;cursor:pointer;color:var(--teal-dark);
+  }
+  .icon-btn:active{transform:scale(0.94);}
+
+  /* date nav */
+  .date-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .date-nav button{background:none;border:none;font-size:20px;color:var(--teal-dark);padding:6px 10px;cursor:pointer;}
+  .date-nav .date-label{font-size:14px;font-weight:700;color:var(--ink);text-align:center;}
+  .date-nav .date-label .rel{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:1px;}
+
+  /* ring card */
+  .ring-card{
+    background:var(--card);border-radius:var(--radius);
+    padding:22px 18px;margin-bottom:16px;
+    box-shadow:0 1px 2px rgba(20,40,35,0.04), 0 8px 24px rgba(20,40,35,0.05);
+    display:flex;align-items:center;gap:18px;
+  }
+  .ring-wrap{position:relative;width:118px;height:118px;flex:none;}
+  .ring-wrap svg{transform:rotate(-90deg);}
+  .ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring-center .kcal{font-size:22px;font-weight:800;line-height:1;}
+  .ring-center .kcal-lbl{font-size:10px;color:var(--muted);margin-top:3px;}
+  .ring-meta{flex:1;}
+  .ring-meta .row{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;color:var(--muted);}
+  .ring-meta .row b{color:var(--ink);font-weight:700;}
+  .ring-meta .status{
+    margin-top:8px;font-size:11.5px;font-weight:700;padding:5px 9px;border-radius:20px;
+    display:inline-block;
+  }
+  .status.ok{background:var(--teal-pale);color:var(--teal-dark);}
+  .status.near{background:#FCF3E3;color:#8A5A16;}
+  .status.over{background:var(--red-pale);color:var(--red);}
+
+  /* alert banner */
+  .alert-banner{
+    background:var(--red);color:#fff;border-radius:var(--radius);
+    padding:14px 16px;margin-bottom:16px;font-size:13.5px;line-height:1.6;
+    display:none;align-items:flex-start;gap:10px;
+  }
+  .alert-banner.show{display:flex;}
+  .alert-banner .x{cursor:pointer;font-size:16px;opacity:0.85;margin-inline-start:auto;}
+
+  /* add food card */
+  .add-card{
+    background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:16px;
+    box-shadow:0 1px 2px rgba(20,40,35,0.04);
+  }
+  .add-card h3{margin:0 0 10px;font-size:14px;font-weight:800;color:var(--teal-dark);}
+  .add-row{display:flex;gap:8px;}
+  .add-row input[type=text]{
+    flex:1;border:1px solid var(--line);border-radius:12px;padding:11px 13px;
+    font-size:14px;font-family:inherit;background:#FBFCFB;color:var(--ink);
+  }
+  .add-row input[type=text]:focus{outline:none;border-color:var(--teal);}
+  .btn{
+    border:none;border-radius:12px;padding:11px 16px;font-size:13.5px;font-weight:700;
+    cursor:pointer;font-family:inherit;
+  }
+  .btn:active{transform:scale(0.96);}
+  .btn-primary{background:var(--teal);color:#fff;}
+  .btn-primary:disabled{background:#A9BEB9;}
+  .camera-row{display:flex;gap:8px;margin-top:10px;}
+  .btn-outline{
+    flex:1;background:#fff;color:var(--teal-dark);border:1.5px dashed var(--teal);
+    border-radius:12px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;
+  }
+  #photoInput{display:none;}
+  .loading-row{display:none;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--muted);}
+  .loading-row.show{display:flex;}
+  .spinner{
+    width:14px;height:14px;border:2px solid var(--teal-pale);border-top-color:var(--teal);
+    border-radius:50%;animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .err-msg{color:var(--red);font-size:12px;margin-top:8px;display:none;}
+  .err-msg.show{display:block;}
+  .manual-toggle{
+    background:none;border:none;color:var(--muted);font-size:12px;font-weight:700;
+    cursor:pointer;padding:8px 2px 0;text-decoration:underline;font-family:inherit;
+  }
+  .manual-form{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);}
+  .manual-form.show{display:block;}
+  .manual-form .field-row{display:flex;gap:8px;margin-bottom:8px;}
+  .manual-form input{
+    border:1px solid var(--line);border-radius:12px;padding:10px 12px;
+    font-size:13.5px;font-family:inherit;background:#FBFCFB;color:var(--ink);width:100%;
+  }
+  .manual-form .mf-name{margin-bottom:8px;}
+  .manual-form .mf-weight{flex:1;}
+  .manual-form .mf-cal{flex:1;}
+  .manual-form .btn-primary{width:100%;}
+
+  /* meal list */
+  .meals-head{display:flex;justify-content:space-between;align-items:baseline;margin:6px 4px 8px;}
+  .meals-head h3{font-size:14px;font-weight:800;margin:0;}
+  .meals-head span{font-size:12px;color:var(--muted);}
+  .meal-item{
+    background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:9px;
+    display:flex;align-items:flex-start;gap:10px;box-shadow:0 1px 2px rgba(20,40,35,0.03);
+  }
+  .meal-item .thumb{
+    width:44px;height:44px;border-radius:10px;background:var(--teal-pale);
+    display:flex;align-items:center;justify-content:center;font-size:19px;flex:none;overflow:hidden;
+  }
+  .meal-item .thumb img{width:100%;height:100%;object-fit:cover;}
+  .meal-item .info{flex:1;min-width:0;}
+  .meal-item .name{font-size:13.5px;font-weight:700;color:var(--ink);}
+  .meal-item .sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .meal-item .macros{font-size:10.5px;color:var(--muted);margin-top:3px;}
+  .meal-item .kcal-tag{font-size:14px;font-weight:800;color:var(--teal-dark);white-space:nowrap;}
+  .meal-item .del{
+    background:none;border:none;color:#B7C4C0;font-size:16px;cursor:pointer;padding:2px 4px;
+  }
+  .empty-state{text-align:center;padding:30px 10px;color:var(--muted);font-size:13px;}
+  .empty-state .big{font-size:30px;margin-bottom:8px;}
+
+  /* meal type pills */
+  .meal-type-pills{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .meal-type-pill{
+    flex:none;padding:8px 15px;border-radius:20px;border:1.5px solid var(--line);
+    background:#fff;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;
+    white-space:nowrap;font-family:inherit;
+  }
+  .meal-type-pill.active{background:var(--teal);border-color:var(--teal);color:#fff;}
+
+  /* meal sections */
+  .meal-section{margin-bottom:16px;}
+  .meal-section-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:13px;font-weight:800;color:var(--teal-dark);margin:0 4px 8px;
+  }
+  .meal-section-head .sub-kcal{font-size:11.5px;font-weight:700;color:var(--muted);}
+  .item-actions{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .meal-item .edit{background:none;border:none;color:#9FB3AD;font-size:14px;cursor:pointer;padding:2px 4px;}
+
+  /* profile modal */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(15,25,22,0.5);display:none;
+    align-items:flex-end;justify-content:center;z-index:50;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:var(--bg);width:100%;max-width:480px;border-radius:22px 22px 0 0;
+    padding:22px 18px 26px;max-height:88vh;overflow-y:auto;
+  }
+  .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+  .modal h2{margin:0;font-size:17px;font-weight:800;}
+  .modal .desc{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:5px;}
+  .field input,.field select{
+    width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 13px;
+    font-size:14px;font-family:inherit;background:var(--card);color:var(--ink);
+  }
+  .field-row{display:flex;gap:10px;}
+  .field-row .field{flex:1;}
+  .modal .btn-primary{width:100%;margin-top:6px;padding:13px;font-size:14.5px;border-radius:14px;}
+  .result-box{
+    background:var(--teal-pale);border-radius:14px;padding:12px 14px;margin-top:10px;font-size:12.5px;color:var(--teal-dark);line-height:1.7;
+  }
+
+  .footer-note{text-align:center;font-size:10.5px;color:var(--muted);margin-top:18px;padding:0 20px;line-height:1.6;}
+
+  /* weight tracking */
+  .header-actions{display:flex;gap:8px;}
+  .weight-quick-row{display:flex;gap:8px;margin-bottom:14px;}
+  .weight-quick-row input{
+    flex:1;border:1px solid var(--line);border-radius:12px;padding:11px 13px;
+    font-size:14px;font-family:inherit;background:var(--card);color:var(--ink);
+  }
+  .weight-summary{display:flex;gap:10px;margin-bottom:14px;}
+  .weight-stat{flex:1;background:var(--teal-pale);border-radius:14px;padding:10px 12px;text-align:center;}
+  .weight-stat .val{font-size:17px;font-weight:800;color:var(--teal-dark);}
+  .weight-stat .lbl{font-size:10.5px;color:var(--muted);margin-top:2px;}
+  .weight-chart-wrap{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 8px 4px;margin-bottom:14px;}
+  .weight-chart-wrap svg{width:100%;height:auto;display:block;}
+  .weight-entry-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:9px 4px;border-bottom:1px solid var(--line);font-size:12.5px;
+  }
+  .weight-entry-row:last-child{border-bottom:none;}
+  .weight-entry-row .we-date{color:var(--muted);}
+  .weight-entry-row .we-val{font-weight:800;color:var(--ink);}
+  .weight-entry-row .we-del{background:none;border:none;color:#B7C4C0;font-size:14px;cursor:pointer;}
+  .weight-empty{text-align:center;padding:24px 10px;color:var(--muted);font-size:12.5px;}
+
+  /* activity tracking */
+  .activity-item .thumb{background:#FCEFE6;}
+  .activity-item .kcal-tag{color:var(--gold);}
+  .activity-card h3{color:#8A5A16;}
+  .activity-card .btn-primary{background:#C08A3B;}
+
+  /* weekly analysis */
+  .week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .week-nav button{background:none;border:none;font-size:20px;color:var(--teal-dark);padding:6px 10px;cursor:pointer;}
+  .week-nav button:disabled{opacity:0.3;}
+  .week-nav .wk-label{font-size:13px;font-weight:700;text-align:center;}
+  .week-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+  .week-stat{background:var(--teal-pale);border-radius:14px;padding:10px 12px;text-align:center;}
+  .week-stat .val{font-size:16px;font-weight:800;color:var(--teal-dark);}
+  .week-stat .lbl{font-size:10px;color:var(--muted);margin-top:2px;}
+  .week-chart-wrap{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 8px 4px;margin-bottom:14px;}
+  .week-chart-wrap svg{width:100%;height:auto;display:block;}
+  .week-compare{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:12.5px;line-height:1.9;color:var(--muted);}
+  .week-compare b{color:var(--ink);}
+  .week-day-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 4px;border-bottom:1px solid var(--line);font-size:12px;
+  }
+  .week-day-row:last-child{border-bottom:none;}
+  .week-day-row .wd-status{width:16px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="app-head">
+    <div>
+      <h1>سجل الطعام الذكي</h1>
+      <div class="sub" id="targetLine">جارٍ التحميل...</div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="weeklyBtn" title="التحليل الأسبوعي">📊</button>
+      <button class="icon-btn" id="weightBtn" title="تتبع الوزن">📈</button>
+      <button class="icon-btn" id="settingsBtn" title="الملف الشخصي">⚙️</button>
+    </div>
+  </header>
+
+  <div class="date-nav">
+    <button id="prevDay">›</button>
+    <div class="date-label"><span id="dateText">اليوم</span><span class="rel" id="dateRel"></span></div>
+    <button id="nextDay">‹</button>
+  </div>
+
+  <div class="alert-banner" id="alertBanner">
+    <span id="alertText"></span>
+    <span class="x" id="alertClose">✕</span>
+  </div>
+
+  <div class="ring-card">
+    <div class="ring-wrap">
+      <svg width="118" height="118" viewBox="0 0 118 118">
+        <circle cx="59" cy="59" r="50" fill="none" stroke="#EDF2F0" stroke-width="12"/>
+        <circle id="ringProgress" cx="59" cy="59" r="50" fill="none" stroke="var(--teal)" stroke-width="12"
+                stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314"/>
+      </svg>
+      <div class="ring-center">
+        <div class="kcal" id="ringKcal">0</div>
+        <div class="kcal-lbl">صافي السعرات</div>
+      </div>
+    </div>
+    <div class="ring-meta">
+      <div class="row"><span>الهدف اليومي</span><b id="metaTarget">–</b></div>
+      <div class="row"><span>الطعام</span><b id="metaFood">–</b></div>
+      <div class="row"><span>الحرق بالنشاط</span><b id="metaBurned">–</b></div>
+      <div class="row"><span>مؤشر كتلة الجسم</span><b id="metaBmi">–</b></div>
+      <span class="status ok" id="metaStatus">جارٍ التحميل</span>
+    </div>
+  </div>
+
+  <div class="add-card">
+    <h3>أضف وجبة</h3>
+    <div class="meal-type-pills" id="mealTypePills"></div>
+    <div class="add-row">
+      <input type="text" id="foodText" placeholder="مثال: طبق فول بالزيت وقطعة عيش بلدي">
+      <button class="btn btn-primary" id="calcTextBtn">احسب</button>
+    </div>
+    <div class="camera-row">
+      <button class="btn-outline" id="photoBtn">📷 التقط صورة للطعام</button>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" capture="environment">
+    <div class="loading-row" id="loadingRow"><div class="spinner"></div><span id="loadingText">يحسب السعرات...</span></div>
+    <div class="err-msg" id="errMsg"></div>
+
+    <button type="button" class="manual-toggle" id="manualToggleBtn">✏️ أو أدخل السعرات يدوياً بدون ذكاء اصطناعي</button>
+    <div class="manual-form" id="manualForm">
+      <input type="text" id="mfName" class="mf-name" placeholder="اسم الوجبة (اختياري)">
+      <div class="field-row">
+        <input type="number" id="mfWeight" class="mf-weight" inputmode="numeric" placeholder="الوزن بالجرام (اختياري)">
+        <input type="number" id="mfCal" class="mf-cal" inputmode="numeric" placeholder="السعرات الحرارية">
+      </div>
+      <button class="btn btn-primary" id="mfAddBtn">إضافة الوجبة</button>
+    </div>
+  </div>
+
+  <div class="meals-head">
+    <h3>وجبات اليوم</h3>
+    <span id="mealCount"></span>
+  </div>
+  <div id="mealsList"></div>
+
+  <div class="add-card activity-card">
+    <h3>🏃 النشاط اليومي</h3>
+    <div class="add-row">
+      <input type="text" id="activityText" placeholder="مثال: جري 30 دقيقة">
+      <button class="btn btn-primary" id="calcActivityBtn">احسب</button>
+    </div>
+    <div class="loading-row" id="activityLoadingRow"><div class="spinner"></div><span>يحسب السعرات المحروقة...</span></div>
+    <div class="err-msg" id="activityErrMsg"></div>
+
+    <button type="button" class="manual-toggle" id="activityManualToggleBtn">✏️ أو أدخل السعرات المحروقة يدوياً</button>
+    <div class="manual-form" id="activityManualForm">
+      <input type="text" id="amName" class="mf-name" placeholder="اسم النشاط (اختياري)">
+      <div class="field-row">
+        <input type="number" id="amCal" class="mf-cal" inputmode="numeric" placeholder="السعرات المحروقة">
+      </div>
+      <button class="btn btn-primary" id="amAddBtn">إضافة النشاط</button>
+    </div>
+  </div>
+
+  <div class="meals-head">
+    <h3>أنشطة اليوم</h3>
+    <span id="activityCount"></span>
+  </div>
+  <div id="activitiesList"></div>
+
+  <div class="footer-note">
+    الحسابات تقديرية بالذكاء الاصطناعي (Google Gemini) وتعتمد على معادلة Mifflin-St Jeor وتوصيات عجز السعرات القائمة على الأبحاث الحديثة لفقدان الوزن. جميع بياناتك محفوظة على هذا الجهاز فقط. استشر طبيبك لأي خطة غذائية علاجية.
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal-overlay" id="profileOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>الملف الشخصي</h2>
+      <button class="icon-btn" id="closeProfileBtn" title="إغلاق">✕</button>
+    </div>
+    <div class="desc">تُستخدم هذه البيانات لحساب مؤشر كتلة الجسم واحتياجك اليومي من السعرات لفقدان الوزن.</div>
+    <div class="field-row">
+      <div class="field">
+        <label>الجنس</label>
+        <select id="pSex">
+          <option value="male">ذكر</option>
+          <option value="female">أنثى</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>العمر (سنة)</label>
+        <input type="number" id="pAge" inputmode="numeric" placeholder="35">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>الطول (سم)</label>
+        <input type="number" id="pHeight" inputmode="numeric" placeholder="175">
+      </div>
+      <div class="field">
+        <label>الوزن (كجم)</label>
+        <input type="number" id="pWeight" inputmode="decimal" placeholder="90">
+      </div>
+    </div>
+    <div class="field">
+      <label>مستوى النشاط اليومي</label>
+      <select id="pActivity">
+        <option value="1.2">قليل الحركة (عمل مكتبي، بدون رياضة)</option>
+        <option value="1.375">نشاط خفيف (رياضة 1-3 أيام/أسبوع)</option>
+        <option value="1.55">نشاط متوسط (رياضة 3-5 أيام/أسبوع)</option>
+        <option value="1.725">نشاط عالٍ (رياضة 6-7 أيام/أسبوع)</option>
+        <option value="1.9">نشاط عالٍ جداً (عمل بدني + رياضة يومية)</option>
+      </select>
+    </div>
+    <div class="result-box" id="profileResult" style="display:none;"></div>
+    <button class="btn btn-primary" id="saveProfileBtn">حفظ وحساب الهدف</button>
+
+    <div class="field" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line);">
+      <label>مفتاح Gemini API (مجاني)</label>
+      <input type="password" id="pApiKey" placeholder="الصق المفتاح هنا">
+      <div class="desc" style="margin:6px 0 0;">
+        احصل على مفتاح مجاني من
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--teal-dark);">aistudio.google.com/app/apikey</a>
+        بحساب Google، بدون بطاقة ائتمان. يُحفظ المفتاح على جهازك فقط ولا يُرسل لأي مكان سوى Google.
+      </div>
+    </div>
+    <button class="btn btn-outline" id="saveApiKeyBtn" style="width:100%;margin-top:10px;">حفظ المفتاح</button>
+  </div>
+</div>
+
+<!-- Edit Meal Modal -->
+<div class="modal-overlay" id="editOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>تعديل الوجبة</h2>
+      <button class="icon-btn" id="closeEditBtn" title="إغلاق">✕</button>
+    </div>
+    <div class="field">
+      <label>اسم الوجبة</label>
+      <input type="text" id="eName">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>الوزن (غم)</label>
+        <input type="number" id="eWeight" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>السعرات الحرارية</label>
+        <input type="number" id="eCalories" inputmode="numeric">
+      </div>
+    </div>
+    <div class="field">
+      <label>الوجبة</label>
+      <select id="eMealType"></select>
+    </div>
+    <button class="btn btn-primary" id="saveEditBtn">حفظ التعديل</button>
+    <button class="btn btn-outline" id="deleteEditBtn" style="width:100%;margin-top:10px;color:var(--red);border-color:var(--red);">حذف الوجبة</button>
+  </div>
+</div>
+
+<!-- Weight Tracking Modal -->
+<div class="modal-overlay" id="weightOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>تتبع الوزن</h2>
+      <button class="icon-btn" id="closeWeightBtn" title="إغلاق">✕</button>
+    </div>
+    <div class="weight-quick-row">
+      <input type="number" id="wNewWeight" inputmode="decimal" placeholder="سجّل وزنك اليوم (كجم)">
+      <button class="btn btn-primary" id="saveWeightBtn">تسجيل</button>
+    </div>
+    <div class="weight-summary" id="weightSummary"></div>
+    <div class="weight-chart-wrap" id="weightChartWrap"></div>
+    <div id="weightEntriesList"></div>
+  </div>
+</div>
+
+<!-- Edit Activity Modal -->
+<div class="modal-overlay" id="editActivityOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>تعديل النشاط</h2>
+      <button class="icon-btn" id="closeEditActivityBtn" title="إغلاق">✕</button>
+    </div>
+    <div class="field">
+      <label>اسم النشاط</label>
+      <input type="text" id="eaName">
+    </div>
+    <div class="field">
+      <label>السعرات المحروقة</label>
+      <input type="number" id="eaCalories" inputmode="numeric">
+    </div>
+    <button class="btn btn-primary" id="saveEditActivityBtn">حفظ التعديل</button>
+    <button class="btn btn-outline" id="deleteEditActivityBtn" style="width:100%;margin-top:10px;color:var(--red);border-color:var(--red);">حذف النشاط</button>
+  </div>
+</div>
+
+<!-- Weekly Analysis Modal -->
+<div class="modal-overlay" id="weeklyOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>التحليل الأسبوعي</h2>
+      <button class="icon-btn" id="closeWeeklyBtn" title="إغلاق">✕</button>
+    </div>
+    <div class="week-nav">
+      <button id="wkPrev">›</button>
+      <div class="wk-label" id="wkLabel">–</div>
+      <button id="wkNext">‹</button>
+    </div>
+    <div class="week-stats-grid" id="weekStatsGrid"></div>
+    <div class="week-chart-wrap" id="weekChartWrap"></div>
+    <div id="weekDaysList"></div>
+    <div class="week-compare" id="weekCompare" style="margin-top:14px;"></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_NS_PROFILE = 'profile';
+const MEAL_TYPES = [
+  {key:'breakfast', label:'فطار', icon:'🌅'},
+  {key:'lunch', label:'غداء', icon:'☀️'},
+  {key:'dinner', label:'عشاء', icon:'🌙'},
+  {key:'snack', label:'سناكس', icon:'🍎'}
+];
+function defaultMealType(){
+  const h = new Date().getHours();
+  if(h < 11) return 'breakfast';
+  if(h < 16) return 'lunch';
+  if(h < 21) return 'dinner';
+  return 'snack';
+}
+const state = {
+  profile: null,
+  currentDate: todayStr(),
+  dayLog: null,
+  selectedMealType: defaultMealType(),
+  editingId: null
+};
+
+function todayStr(offsetDays=0){
+  const d = new Date();
+  d.setDate(d.getDate()+offsetDays);
+  return d.toISOString().slice(0,10);
+}
+function dayKey(dateStr){ return 'foodlog:'+dateStr; }
+
+function fmtDateLabel(dateStr){
+  const today = todayStr();
+  const yest = todayStr(-1);
+  const tom = todayStr(1);
+  const d = new Date(dateStr+'T00:00:00');
+  const weekdays = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const label = `${weekdays[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
+  let rel = '';
+  if(dateStr===today) rel='اليوم';
+  else if(dateStr===yest) rel='أمس';
+  else if(dateStr===tom) rel='غداً';
+  return {label, rel};
+}
+
+/* ---------- storage helpers (localStorage, all data stays on this device) ---------- */
+async function loadProfile(){
+  try{
+    const v = localStorage.getItem(STORAGE_NS_PROFILE);
+    return v ? JSON.parse(v) : null;
+  }catch(e){ return null; }
+}
+async function saveProfile(p){
+  localStorage.setItem(STORAGE_NS_PROFILE, JSON.stringify(p));
+}
+async function loadDay(dateStr){
+  try{
+    const v = localStorage.getItem(dayKey(dateStr));
+    const log = v ? JSON.parse(v) : {entries:[], activities:[], reminderShown:false};
+    if(!log.activities) log.activities = [];
+    if(!log.entries) log.entries = [];
+    return log;
+  }catch(e){ return {entries:[], activities:[], reminderShown:false}; }
+}
+async function saveDay(dateStr, log){
+  localStorage.setItem(dayKey(dateStr), JSON.stringify(log));
+}
+function getApiKey(){ return localStorage.getItem('gemini_api_key') || ''; }
+function setApiKey(k){ localStorage.setItem('gemini_api_key', k); }
+function loadWeightLog(){
+  try{
+    const v = localStorage.getItem('weightlog');
+    return v ? JSON.parse(v) : [];
+  }catch(e){ return []; }
+}
+function saveWeightLog(arr){
+  localStorage.setItem('weightlog', JSON.stringify(arr));
+}
+
+/* ---------- calorie target logic ---------- */
+function computeTargets(p){
+  const heightM = p.height/100;
+  const bmi = p.weight/(heightM*heightM);
+  let bmr;
+  if(p.sex==='male'){
+    bmr = 10*p.weight + 6.25*p.height - 5*p.age + 5;
+  }else{
+    bmr = 10*p.weight + 6.25*p.height - 5*p.age - 161;
+  }
+  const tdee = bmr * parseFloat(p.activity);
+
+  // Evidence-based deficit tiers (CDC/NIH-aligned: ~0.5-1% body weight/week)
+  let deficit;
+  let bmiCategory;
+  if(bmi >= 30){ deficit = 750; bmiCategory = 'سمنة'; }
+  else if(bmi >= 25){ deficit = 500; bmiCategory = 'زيادة وزن'; }
+  else if(bmi >= 18.5){ deficit = 300; bmiCategory = 'وزن طبيعي'; }
+  else { deficit = 0; bmiCategory = 'نقص وزن'; }
+
+  let target = tdee - deficit;
+  // safety floor per general clinical guidance
+  const floor = p.sex==='male' ? 1500 : 1200;
+  if(target < floor) target = floor;
+  target = Math.round(target/10)*10;
+
+  return {bmi: Math.round(bmi*10)/10, bmiCategory, bmr: Math.round(bmr), tdee: Math.round(tdee), deficit, target};
+}
+
+/* ---------- UI: profile modal ---------- */
+const profileOverlay = document.getElementById('profileOverlay');
+document.getElementById('settingsBtn').onclick = ()=>{ openProfileModal(); };
+
+function openProfileModal(){
+  if(state.profile){
+    document.getElementById('pSex').value = state.profile.sex;
+    document.getElementById('pAge').value = state.profile.age;
+    document.getElementById('pHeight').value = state.profile.height;
+    document.getElementById('pWeight').value = state.profile.weight;
+    document.getElementById('pActivity').value = state.profile.activity;
+  }
+  document.getElementById('pApiKey').value = getApiKey();
+  document.getElementById('profileResult').style.display='none';
+  // only allow closing without saving if a profile already exists
+  document.getElementById('closeProfileBtn').style.visibility = state.profile ? 'visible' : 'hidden';
+  profileOverlay.classList.add('show');
+}
+function closeProfileModal(){
+  if(!state.profile) return; // must complete profile on first run
+  profileOverlay.classList.remove('show');
+}
+document.getElementById('closeProfileBtn').onclick = closeProfileModal;
+profileOverlay.addEventListener('click', (e)=>{
+  if(e.target === profileOverlay) closeProfileModal();
+});
+
+document.getElementById('saveProfileBtn').onclick = async ()=>{
+  const sex = document.getElementById('pSex').value;
+  const age = parseFloat(document.getElementById('pAge').value);
+  const height = parseFloat(document.getElementById('pHeight').value);
+  const weight = parseFloat(document.getElementById('pWeight').value);
+  const activity = document.getElementById('pActivity').value;
+  if(!age||!height||!weight){
+    alert('من فضلك أدخل العمر والطول والوزن');
+    return;
+  }
+  const profile = {sex, age, height, weight, activity};
+  const targets = computeTargets(profile);
+  profile.targets = targets;
+  state.profile = profile;
+  await saveProfile(profile);
+
+  const resBox = document.getElementById('profileResult');
+  resBox.style.display='block';
+  resBox.innerHTML = `مؤشر كتلة الجسم: <b>${targets.bmi}</b> (${targets.bmiCategory})<br>
+    السعرات للحفاظ على الوزن (TDEE): <b>${targets.tdee}</b> سعرة<br>
+    الهدف اليومي لفقدان الوزن: <b>${targets.target}</b> سعرة (عجز ${targets.deficit} سعرة)`;
+
+  renderHeader();
+  await refreshDay();
+  setTimeout(()=>{ profileOverlay.classList.remove('show'); }, 900);
+};
+
+document.getElementById('saveApiKeyBtn').onclick = ()=>{
+  const key = document.getElementById('pApiKey').value.trim();
+  if(!key){ alert('من فضلك الصق المفتاح أولاً'); return; }
+  setApiKey(key);
+  showErr(null);
+  alert('تم حفظ المفتاح ✓');
+};
+
+/* ---------- meal type pills ---------- */
+function renderMealTypePills(){
+  const wrap = document.getElementById('mealTypePills');
+  wrap.innerHTML = MEAL_TYPES.map(mt=>
+    `<button type="button" class="meal-type-pill ${mt.key===state.selectedMealType?'active':''}" data-key="${mt.key}">${mt.icon} ${mt.label}</button>`
+  ).join('');
+  wrap.querySelectorAll('.meal-type-pill').forEach(btn=>{
+    btn.onclick = ()=>{
+      state.selectedMealType = btn.dataset.key;
+      wrap.querySelectorAll('.meal-type-pill').forEach(b=>b.classList.toggle('active', b===btn));
+    };
+  });
+}
+renderMealTypePills();
+
+/* ---------- edit meal modal ---------- */
+const editOverlay = document.getElementById('editOverlay');
+document.getElementById('eMealType').innerHTML = MEAL_TYPES.map(mt=>`<option value="${mt.key}">${mt.icon} ${mt.label}</option>`).join('');
+
+function openEditModal(id){
+  const entry = state.dayLog.entries.find(e=>e.id===id);
+  if(!entry) return;
+  state.editingId = id;
+  const itemsStr = (entry.items||[]).map(it=>it.name).join('، ');
+  document.getElementById('eName').value = entry.description || itemsStr || '';
+  document.getElementById('eWeight').value = entry.total_weight_g || '';
+  document.getElementById('eCalories').value = entry.total_calories || '';
+  document.getElementById('eMealType').value = entry.mealType || 'snack';
+  editOverlay.classList.add('show');
+}
+function closeEditModal(){
+  editOverlay.classList.remove('show');
+  state.editingId = null;
+}
+document.getElementById('closeEditBtn').onclick = closeEditModal;
+editOverlay.addEventListener('click', (e)=>{
+  if(e.target === editOverlay) closeEditModal();
+});
+
+document.getElementById('saveEditBtn').onclick = async ()=>{
+  const entry = state.dayLog.entries.find(e=>e.id===state.editingId);
+  if(!entry) return;
+  const name = document.getElementById('eName').value.trim();
+  const weight = parseFloat(document.getElementById('eWeight').value)||0;
+  const calories = parseFloat(document.getElementById('eCalories').value)||0;
+  const mealType = document.getElementById('eMealType').value;
+  entry.description = name || null;
+  entry.total_weight_g = Math.round(weight);
+  entry.total_calories = Math.round(calories);
+  entry.mealType = mealType;
+  const total = state.dayLog.entries.reduce((s,e)=>s+e.total_calories,0);
+  if(computeNet(state.dayLog) < getEffectiveTarget(state.dayLog)) state.dayLog.reminderShown = false;
+  await saveDay(state.currentDate, state.dayLog);
+  renderDay();
+  closeEditModal();
+};
+
+document.getElementById('deleteEditBtn').onclick = async ()=>{
+  if(!state.editingId) return;
+  const id = state.editingId;
+  closeEditModal();
+  await deleteEntry(id);
+};
+
+/* ---------- weight tracking ---------- */
+const weightOverlay = document.getElementById('weightOverlay');
+document.getElementById('weightBtn').onclick = openWeightModal;
+document.getElementById('closeWeightBtn').onclick = closeWeightModal;
+weightOverlay.addEventListener('click', (e)=>{
+  if(e.target === weightOverlay) closeWeightModal();
+});
+
+function openWeightModal(){
+  const log = loadWeightLog();
+  document.getElementById('wNewWeight').value = log.length ? log[log.length-1].weight : (state.profile ? state.profile.weight : '');
+  renderWeightModal(log);
+  weightOverlay.classList.add('show');
+}
+function closeWeightModal(){
+  weightOverlay.classList.remove('show');
+}
+
+document.getElementById('saveWeightBtn').onclick = async ()=>{
+  const w = parseFloat(document.getElementById('wNewWeight').value);
+  if(!w || w<=0){ alert('أدخل وزناً صحيحاً'); return; }
+  const today = todayStr();
+  let log = loadWeightLog();
+  const idx = log.findIndex(e=>e.date===today);
+  if(idx>=0) log[idx].weight = w;
+  else log.push({date: today, weight: w});
+  log.sort((a,b)=>a.date.localeCompare(b.date));
+  saveWeightLog(log);
+
+  // keep profile weight & targets in sync with the latest reading
+  if(state.profile){
+    state.profile.weight = w;
+    state.profile.targets = computeTargets(state.profile);
+    await saveProfile(state.profile);
+    renderHeader();
+    if(state.dayLog) renderDay();
+  }
+  renderWeightModal(log);
+};
+
+async function deleteWeightEntry(date){
+  let log = loadWeightLog();
+  log = log.filter(e=>e.date!==date);
+  saveWeightLog(log);
+  renderWeightModal(log);
+}
+
+function renderWeightModal(log){
+  // summary stats
+  const summaryEl = document.getElementById('weightSummary');
+  if(log.length===0){
+    summaryEl.innerHTML = '';
+  }else{
+    const first = log[0].weight;
+    const last = log[log.length-1].weight;
+    const delta = last - first;
+    const deltaStr = (delta>0?'+':'') + delta.toFixed(1);
+    summaryEl.innerHTML = `
+      <div class="weight-stat"><div class="val">${last}</div><div class="lbl">كجم حالياً</div></div>
+      <div class="weight-stat"><div class="val">${deltaStr}</div><div class="lbl">منذ أول تسجيل</div></div>
+      <div class="weight-stat"><div class="val">${log.length}</div><div class="lbl">تسجيلة</div></div>
+    `;
+  }
+  renderWeightChart(log);
+  renderWeightEntries(log);
+}
+
+function renderWeightChart(log){
+  const wrap = document.getElementById('weightChartWrap');
+  if(log.length < 2){
+    wrap.innerHTML = `<div class="weight-empty">سجّل وزنك في يومين مختلفين على الأقل لعرض الرسم البياني</div>`;
+    return;
+  }
+  const W = 320, H = 140, padL = 34, padR = 12, padT = 14, padB = 22;
+  const weights = log.map(e=>e.weight);
+  let min = Math.min(...weights), max = Math.max(...weights);
+  if(min===max){ min -= 1; max += 1; }
+  const pad = (max-min)*0.15;
+  min -= pad; max += pad;
+  const n = log.length;
+  const xStep = (W - padL - padR) / (n-1);
+  const yFor = (w)=> padT + (H-padT-padB) * (1 - (w-min)/(max-min));
+  const xFor = (i)=> padL + i*xStep;
+
+  const points = log.map((e,i)=>`${xFor(i)},${yFor(e.weight)}`).join(' ');
+  const circles = log.map((e,i)=>`<circle cx="${xFor(i)}" cy="${yFor(e.weight)}" r="3" fill="#0E6659"/>`).join('');
+
+  // x labels: first, middle, last (short date)
+  const shortDate = (d)=>{ const parts=d.split('-'); return parts[2]+'/'+parts[1]; };
+  const labelIdxs = n<=3 ? log.map((_,i)=>i) : [0, Math.floor((n-1)/2), n-1];
+  const xLabels = labelIdxs.map(i=>`<text x="${xFor(i)}" y="${H-6}" font-size="9" fill="#63756F" text-anchor="middle">${shortDate(log[i].date)}</text>`).join('');
+  const yLabels = `
+    <text x="${padL-6}" y="${yFor(max-pad)+3}" font-size="9" fill="#63756F" text-anchor="end">${(max-pad).toFixed(1)}</text>
+    <text x="${padL-6}" y="${yFor(min+pad)+3}" font-size="9" fill="#63756F" text-anchor="end">${(min+pad).toFixed(1)}</text>
+  `;
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" dir="ltr">
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#E2E8E5"/>
+    <line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#E2E8E5"/>
+    <polyline points="${points}" fill="none" stroke="#0E6659" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${circles}
+    ${xLabels}
+    ${yLabels}
+  </svg>`;
+}
+
+function renderWeightEntries(log){
+  const el = document.getElementById('weightEntriesList');
+  if(log.length===0){
+    el.innerHTML = `<div class="weight-empty">لم تُسجَّل أي قراءة وزن بعد</div>`;
+    return;
+  }
+  el.innerHTML = log.slice().reverse().map(e=>{
+    const {label} = fmtDateLabel(e.date);
+    return `<div class="weight-entry-row">
+      <span class="we-date">${label}</span>
+      <span class="we-val">${e.weight} كجم</span>
+      <button class="we-del" onclick="deleteWeightEntry('${e.date}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- date navigation ---------- */
+document.getElementById('prevDay').onclick = ()=>changeDate(-1);
+document.getElementById('nextDay').onclick = ()=>changeDate(1);
+function changeDate(delta){
+  const d = new Date(state.currentDate+'T00:00:00');
+  d.setDate(d.getDate()+delta);
+  state.currentDate = d.toISOString().slice(0,10);
+  refreshDay();
+}
+
+/* ---------- rendering ---------- */
+function renderHeader(){
+  if(!state.profile) return;
+  document.getElementById('targetLine').textContent =
+    `الهدف اليومي: ${state.profile.targets.target} سعرة · مؤشر كتلة الجسم ${state.profile.targets.bmi}`;
+}
+
+function renderDateNav(){
+  const {label, rel} = fmtDateLabel(state.currentDate);
+  document.getElementById('dateText').textContent = label;
+  document.getElementById('dateRel').textContent = rel;
+}
+
+function renderDay(){
+  const entries = state.dayLog.entries || [];
+  const activities = state.dayLog.activities || [];
+  const foodTotal = entries.reduce((s,e)=>s+e.total_calories,0);
+  const burnedTotal = activities.reduce((s,a)=>s+a.calories,0);
+  const net = foodTotal - burnedTotal;
+  const target = getEffectiveTarget(state.dayLog);
+  const bmiInfo = getEffectiveBmi(state.dayLog);
+  const pct = Math.min(1, Math.max(0, net/target));
+  const circumference = 314;
+  document.getElementById('ringProgress').setAttribute('stroke-dashoffset', circumference*(1-pct));
+  document.getElementById('ringKcal').textContent = net;
+  document.getElementById('metaTarget').textContent = target;
+  document.getElementById('metaFood').textContent = foodTotal;
+  document.getElementById('metaBurned').textContent = burnedTotal ? '-'+burnedTotal : '0';
+  document.getElementById('metaBmi').textContent = bmiInfo.bmi + ' - ' + bmiInfo.bmiCategory;
+  const isHistorical = !!(state.dayLog.targetSnapshot && target !== state.profile.targets.target);
+  document.getElementById('targetLine').textContent = isHistorical
+    ? `الهدف وقتها: ${target} سعرة · مؤشر كتلة الجسم ${bmiInfo.bmi}`
+    : `الهدف اليومي: ${target} سعرة · مؤشر كتلة الجسم ${bmiInfo.bmi}`;
+
+  const statusEl = document.getElementById('metaStatus');
+  const ring = document.getElementById('ringProgress');
+  if(net >= target){
+    statusEl.className='status over'; statusEl.textContent='تم بلوغ الحد اليومي';
+    ring.style.stroke = 'var(--red)';
+  } else if(net >= target*0.85){
+    statusEl.className='status near'; statusEl.textContent='اقتربت من الحد اليومي';
+    ring.style.stroke = 'var(--gold)';
+  } else {
+    statusEl.className='status ok'; statusEl.textContent='ضمن الهدف';
+    ring.style.stroke = 'var(--teal)';
+  }
+
+  document.getElementById('mealCount').textContent = entries.length ? `${entries.length} وجبة` : '';
+  renderMealsList(entries);
+  document.getElementById('activityCount').textContent = activities.length ? `${activities.length} نشاط` : '';
+  renderActivitiesList(activities);
+
+  // reminder banner (based on net calories)
+  const banner = document.getElementById('alertBanner');
+  if(net >= target && !state.dayLog.reminderShown){
+    document.getElementById('alertText').textContent =
+      `لقد وصل صافي سعراتك اليوم إلى الحد المسموح به (${target} سعرة) بعد خصم النشاط. حاولي/حاول تجنّب المزيد من الطعام حتى الغد.`;
+    banner.classList.add('show');
+    state.dayLog.reminderShown = true;
+    saveDay(state.currentDate, state.dayLog);
+    if(navigator.vibrate) navigator.vibrate([80,40,80]);
+  } else if(net < target){
+    banner.classList.remove('show');
+  }
+}
+document.getElementById('alertClose').onclick = ()=>{
+  document.getElementById('alertBanner').classList.remove('show');
+};
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderActivitiesList(activities){
+  const list = document.getElementById('activitiesList');
+  if(activities.length===0){
+    list.innerHTML = `<div class="empty-state"><div class="big">🏃</div>لم يُسجَّل أي نشاط بعد اليوم</div>`;
+    return;
+  }
+  list.innerHTML = activities.slice().sort((a,b)=>a.time.localeCompare(b.time)).map(a=>`
+    <div class="meal-item activity-item" data-id="${a.id}">
+      <div class="thumb"><span>${a.source==='manual'?'✏️':'🔥'}</span></div>
+      <div class="info">
+        <div class="name">${escapeHtml(a.description || 'نشاط')}</div>
+        <div class="sub">${a.time}</div>
+      </div>
+      <div class="kcal-tag">-${a.calories}</div>
+      <div class="item-actions">
+        <button class="edit" onclick="openEditActivityModal('${a.id}')">✎</button>
+        <button class="del" onclick="deleteActivity('${a.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderMealsList(entries){
+  const list = document.getElementById('mealsList');
+  if(entries.length===0){
+    list.innerHTML = `<div class="empty-state"><div class="big">🍽️</div>لم تُسجَّل أي وجبة بعد اليوم</div>`;
+    return;
+  }
+  let html = '';
+  MEAL_TYPES.forEach(mt=>{
+    const group = entries.filter(e=>(e.mealType||'snack')===mt.key).sort((a,b)=>a.time.localeCompare(b.time));
+    if(group.length===0) return;
+    const subtotal = group.reduce((s,e)=>s+e.total_calories,0);
+    html += `<div class="meal-section">
+      <div class="meal-section-head"><span>${mt.icon} ${mt.label}</span><span class="sub-kcal">${subtotal} سعرة</span></div>
+      ${group.map(renderMealItem).join('')}
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+function renderMealItem(e){
+  const itemsStr = (e.items||[]).map(it=>it.name).join('، ');
+  const macros = e.macros ? `بروتين ${e.macros.protein_g||0}غ · كارب ${e.macros.carbs_g||0}غ · دهون ${e.macros.fat_g||0}غ` : '';
+  const thumb = e.photo ? `<img src="${e.photo}">` : (e.source==='photo'?'📷':(e.source==='manual'?'✏️':'📝'));
+  return `<div class="meal-item" data-id="${e.id}">
+    <div class="thumb">${e.photo?thumb:`<span>${thumb}</span>`}</div>
+    <div class="info">
+      <div class="name">${escapeHtml(e.description || itemsStr || 'وجبة')}</div>
+      <div class="sub">${e.time} · ${e.total_weight_g?e.total_weight_g+' غم':''} ${itemsStr && e.description ? '· '+escapeHtml(itemsStr):''}</div>
+      ${macros?`<div class="macros">${macros}</div>`:''}
+    </div>
+    <div class="kcal-tag">${e.total_calories}</div>
+    <div class="item-actions">
+      <button class="edit" onclick="openEditModal('${e.id}')">✎</button>
+      <button class="del" onclick="deleteEntry('${e.id}')">✕</button>
+    </div>
+  </div>`;
+}
+
+async function refreshDay(){
+  renderDateNav();
+  state.dayLog = await loadDay(state.currentDate);
+  renderDay();
+}
+
+function computeNet(dayLog){
+  const food = (dayLog.entries||[]).reduce((s,e)=>s+e.total_calories,0);
+  const burned = (dayLog.activities||[]).reduce((s,a)=>s+a.calories,0);
+  return food - burned;
+}
+function getEffectiveTarget(dayLog){
+  // use the target that was locked in when this day was first logged; fall back to current profile target for legacy/empty days
+  return (dayLog && dayLog.targetSnapshot) ? dayLog.targetSnapshot.target : state.profile.targets.target;
+}
+function getEffectiveBmi(dayLog){
+  return (dayLog && dayLog.targetSnapshot) ? dayLog.targetSnapshot : state.profile.targets;
+}
+function ensureTargetSnapshot(dayLog){
+  if(!dayLog.targetSnapshot){
+    dayLog.targetSnapshot = {...state.profile.targets};
+  }
+}
+
+async function deleteEntry(id){
+  state.dayLog.entries = state.dayLog.entries.filter(e=>e.id!==id);
+  if(computeNet(state.dayLog) < getEffectiveTarget(state.dayLog)) state.dayLog.reminderShown = false;
+  await saveDay(state.currentDate, state.dayLog);
+  renderDay();
+}
+
+async function deleteActivity(id){
+  state.dayLog.activities = state.dayLog.activities.filter(a=>a.id!==id);
+  if(computeNet(state.dayLog) < getEffectiveTarget(state.dayLog)) state.dayLog.reminderShown = false;
+  await saveDay(state.currentDate, state.dayLog);
+  renderDay();
+}
+
+/* ---------- AI calorie calculation (Google Gemini free tier) ---------- */
+const GEMINI_MODEL = 'gemini-3.5-flash-lite';
+const GEMINI_SYSTEM = `أنت خبير تغذية. مهمتك تقدير الوزن بالجرام والسعرات الحرارية للطعام الموصوف أو الموجود في الصورة.
+أجب حصراً بكائن JSON صالح بدون أي نص إضافي أو علامات markdown أو تنسيق، بهذا الشكل بالضبط:
+{"items":[{"name":"اسم الصنف بالعربية","weight_g":رقم,"calories":رقم}],"total_calories":رقم,"total_weight_g":رقم,"macros":{"protein_g":رقم,"carbs_g":رقم,"fat_g":رقم}}
+قدّر بأفضل معرفتك حتى لو كان الوصف أو الصورة غير دقيقين تماماً. الأرقام يجب أن تكون منطقية لحصة طعام عادية.`;
+
+async function callGemini(parts){
+  const apiKey = getApiKey();
+  if(!apiKey){
+    const err = new Error('no_api_key');
+    err.code = 'no_api_key';
+    throw err;
+  }
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "x-goog-api-key": apiKey},
+    body: JSON.stringify({
+      system_instruction: {parts:[{text: GEMINI_SYSTEM}]},
+      contents: [{role:"user", parts: parts}],
+      generationConfig: {temperature: 0.2}
+    })
+  });
+  if(!response.ok){
+    const errData = await response.json().catch(()=>({}));
+    const msg = errData?.error?.message || `HTTP ${response.status}`;
+    const err = new Error(msg);
+    if(response.status===400 || response.status===401 || response.status===403) err.code = 'bad_key';
+    else if(response.status===429) err.code = 'rate_limit';
+    else err.code = 'gemini_error';
+    throw err;
+  }
+  const data = await response.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if(!text){
+    const err = new Error('empty_response: ' + JSON.stringify(data).slice(0,200));
+    err.code = 'gemini_error';
+    throw err;
+  }
+  let clean = text.trim().replace(/```json|```/g,'').trim();
+  const first = clean.indexOf('{');
+  const last = clean.lastIndexOf('}');
+  if(first>=0 && last>first) clean = clean.slice(first, last+1);
+  try{
+    return JSON.parse(clean);
+  }catch(parseErr){
+    const err = new Error('parse_error: ' + clean.slice(0,150));
+    err.code = 'gemini_error';
+    throw err;
+  }
+}
+
+function setLoading(on, text){
+  document.getElementById('loadingRow').classList.toggle('show', on);
+  if(text) document.getElementById('loadingText').textContent = text;
+  document.getElementById('calcTextBtn').disabled = on;
+}
+function showErr(msg){
+  const el = document.getElementById('errMsg');
+  if(!msg){ el.classList.remove('show'); return; }
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function handleAiError(e){
+  if(e && e.code==='no_api_key'){
+    showErr('أضف مفتاح Gemini المجاني من الإعدادات ⚙️ أولاً.');
+    openProfileModal();
+  } else if(e && e.code==='bad_key'){
+    showErr('المفتاح غير صالح أو غير مُفعّل، تحقّق منه في الإعدادات ⚙️. (' + (e.message||'') + ')');
+  } else if(e && e.code==='rate_limit'){
+    showErr('تجاوزت الحد المجاني المسموح به الآن، انتظر دقيقة وحاول مرة أخرى.');
+  } else {
+    showErr('تعذّر الحساب: ' + (e && e.message ? e.message : 'خطأ غير معروف') );
+  }
+  console.error('AI error:', e);
+}
+
+async function addEntry(result, extra){
+  const now = new Date();
+  const entry = {
+    id: 'e'+Date.now(),
+    time: now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0'),
+    items: result.items || [],
+    total_calories: Math.round(result.total_calories||0),
+    total_weight_g: Math.round(result.total_weight_g||0),
+    macros: result.macros || null,
+    source: extra.source,
+    description: extra.description || null,
+    photo: extra.photo || null,
+    mealType: state.selectedMealType
+  };
+  ensureTargetSnapshot(state.dayLog);
+  state.dayLog.entries.push(entry);
+  if(computeNet(state.dayLog) < getEffectiveTarget(state.dayLog)) state.dayLog.reminderShown = false;
+  await saveDay(state.currentDate, state.dayLog);
+  renderDay();
+}
+
+async function addActivity(calories, description, source){
+  const now = new Date();
+  const activity = {
+    id: 'a'+Date.now(),
+    time: now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0'),
+    calories: Math.round(calories||0),
+    description: description || null,
+    source: source
+  };
+  ensureTargetSnapshot(state.dayLog);
+  state.dayLog.activities.push(activity);
+  if(computeNet(state.dayLog) < getEffectiveTarget(state.dayLog)) state.dayLog.reminderShown = false;
+  await saveDay(state.currentDate, state.dayLog);
+  renderDay();
+}
+
+document.getElementById('calcTextBtn').onclick = async ()=>{
+  const text = document.getElementById('foodText').value.trim();
+  if(!text) return;
+  showErr(null);
+  setLoading(true, 'يحسب السعرات...');
+  try{
+    const result = await callGemini([{text: `احسب السعرات الحرارية لهذا الطعام: ${text}`}]);
+    await addEntry(result, {source:'text', description:text});
+    document.getElementById('foodText').value='';
+  }catch(e){
+    handleAiError(e);
+  }finally{
+    setLoading(false);
+  }
+};
+document.getElementById('foodText').addEventListener('keydown', e=>{
+  if(e.key==='Enter') document.getElementById('calcTextBtn').click();
+});
+
+document.getElementById('photoBtn').onclick = ()=>document.getElementById('photoInput').click();
+document.getElementById('photoInput').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  showErr(null);
+  setLoading(true, 'يحلل الصورة ويحسب الوزن والسعرات...');
+  try{
+    const base64 = await fileToBase64(file);
+    const mediaType = file.type || 'image/jpeg';
+    const result = await callGemini([
+      {inline_data:{mime_type: mediaType, data: base64}},
+      {text:"حدد الأصناف الغذائية في هذه الصورة وقدّر وزن كل صنف بالجرام والسعرات الحرارية."}
+    ]);
+    const photoDataUrl = 'data:'+mediaType+';base64,'+base64;
+    await addEntry(result, {source:'photo', photo: photoDataUrl});
+  }catch(err){
+    handleAiError(err);
+  }finally{
+    setLoading(false);
+    e.target.value='';
+  }
+});
+
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = ()=>resolve(r.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+/* ---------- manual entry (no AI) ---------- */
+const manualForm = document.getElementById('manualForm');
+document.getElementById('manualToggleBtn').onclick = ()=>{
+  manualForm.classList.toggle('show');
+};
+document.getElementById('mfAddBtn').onclick = async ()=>{
+  const name = document.getElementById('mfName').value.trim();
+  const weight = parseFloat(document.getElementById('mfWeight').value) || 0;
+  const calories = parseFloat(document.getElementById('mfCal').value);
+  if(!calories || calories<=0){
+    alert('من فضلك أدخل عدد السعرات الحرارية');
+    return;
+  }
+  const result = {
+    items: [{name: name || 'وجبة يدوية', weight_g: weight, calories: calories}],
+    total_calories: calories,
+    total_weight_g: weight,
+    macros: null
+  };
+  await addEntry(result, {source:'manual', description: name || null});
+  document.getElementById('mfName').value = '';
+  document.getElementById('mfWeight').value = '';
+  document.getElementById('mfCal').value = '';
+  manualForm.classList.remove('show');
+};
+
+/* ---------- activity logging ---------- */
+const ACTIVITY_SYSTEM = `أنت خبير لياقة بدنية. مهمتك تقدير عدد السعرات الحرارية المحروقة في النشاط البدني الموصوف، بالاعتماد على وزن الشخص ومدة ونوع النشاط إن ذُكرت.
+أجب حصراً برقم صحيح واحد يمثل السعرات المحروقة، بدون أي نص أو وحدة أو رمز إضافي. مثال إجابة صحيحة: 250`;
+
+async function callGeminiActivity(text, weightKg){
+  const apiKey = getApiKey();
+  if(!apiKey){ const err = new Error('no_api_key'); err.code='no_api_key'; throw err; }
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+  const prompt = `وزن الشخص التقريبي ${weightKg} كجم. قدّر السعرات المحروقة في هذا النشاط: ${text}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "x-goog-api-key": apiKey},
+    body: JSON.stringify({
+      system_instruction: {parts:[{text: ACTIVITY_SYSTEM}]},
+      contents: [{role:"user", parts:[{text: prompt}]}],
+      generationConfig: {temperature: 0.2}
+    })
+  });
+  if(!response.ok){
+    const errData = await response.json().catch(()=>({}));
+    const msg = errData?.error?.message || `HTTP ${response.status}`;
+    const err = new Error(msg);
+    if(response.status===400||response.status===401||response.status===403) err.code='bad_key';
+    else if(response.status===429) err.code='rate_limit';
+    else err.code='gemini_error';
+    throw err;
+  }
+  const data = await response.json();
+  const text2 = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const match = text2.match(/\d+/);
+  if(!match){ const err = new Error('parse_error: '+text2.slice(0,100)); err.code='gemini_error'; throw err; }
+  return parseInt(match[0], 10);
+}
+
+document.getElementById('calcActivityBtn').onclick = async ()=>{
+  const text = document.getElementById('activityText').value.trim();
+  if(!text) return;
+  const errEl = document.getElementById('activityErrMsg');
+  errEl.classList.remove('show');
+  document.getElementById('activityLoadingRow').classList.add('show');
+  document.getElementById('calcActivityBtn').disabled = true;
+  try{
+    const weightKg = state.profile ? state.profile.weight : 75;
+    const calories = await callGeminiActivity(text, weightKg);
+    await addActivity(calories, text, 'text');
+    document.getElementById('activityText').value = '';
+  }catch(e){
+    let msg = 'تعذّر الحساب، حاول مرة أخرى أو أدخل السعرات يدوياً.';
+    if(e.code==='no_api_key'){ msg='أضف مفتاح Gemini المجاني من الإعدادات ⚙️ أولاً.'; openProfileModal(); }
+    else if(e.code==='rate_limit'){ msg='تجاوزت الحد المجاني المسموح به الآن، انتظر دقيقة وحاول مرة أخرى.'; }
+    errEl.textContent = msg;
+    errEl.classList.add('show');
+  }finally{
+    document.getElementById('activityLoadingRow').classList.remove('show');
+    document.getElementById('calcActivityBtn').disabled = false;
+  }
+};
+document.getElementById('activityText').addEventListener('keydown', e=>{
+  if(e.key==='Enter') document.getElementById('calcActivityBtn').click();
+});
+
+const activityManualForm = document.getElementById('activityManualForm');
+document.getElementById('activityManualToggleBtn').onclick = ()=>{
+  activityManualForm.classList.toggle('show');
+};
+document.getElementById('amAddBtn').onclick = async ()=>{
+  const name = document.getElementById('amName').value.trim();
+  const calories = parseFloat(document.getElementById('amCal').value);
+  if(!calories || calories<=0){
+    alert('من فضلك أدخل عدد السعرات المحروقة');
+    return;
+  }
+  await addActivity(calories, name || 'نشاط يدوي', 'manual');
+  document.getElementById('amName').value = '';
+  document.getElementById('amCal').value = '';
+  activityManualForm.classList.remove('show');
+};
+
+/* ---------- edit activity modal ---------- */
+const editActivityOverlay = document.getElementById('editActivityOverlay');
+state.editingActivityId = null;
+function openEditActivityModal(id){
+  const a = state.dayLog.activities.find(x=>x.id===id);
+  if(!a) return;
+  state.editingActivityId = id;
+  document.getElementById('eaName').value = a.description || '';
+  document.getElementById('eaCalories').value = a.calories || '';
+  editActivityOverlay.classList.add('show');
+}
+function closeEditActivityModal(){
+  editActivityOverlay.classList.remove('show');
+  state.editingActivityId = null;
+}
+document.getElementById('closeEditActivityBtn').onclick = closeEditActivityModal;
+editActivityOverlay.addEventListener('click', (e)=>{
+  if(e.target === editActivityOverlay) closeEditActivityModal();
+});
+document.getElementById('saveEditActivityBtn').onclick = async ()=>{
+  const a = state.dayLog.activities.find(x=>x.id===state.editingActivityId);
+  if(!a) return;
+  a.description = document.getElementById('eaName').value.trim() || null;
+  a.calories = Math.round(parseFloat(document.getElementById('eaCalories').value)||0);
+  if(computeNet(state.dayLog) < getEffectiveTarget(state.dayLog)) state.dayLog.reminderShown = false;
+  await saveDay(state.currentDate, state.dayLog);
+  renderDay();
+  closeEditActivityModal();
+};
+document.getElementById('deleteEditActivityBtn').onclick = async ()=>{
+  if(!state.editingActivityId) return;
+  const id = state.editingActivityId;
+  closeEditActivityModal();
+  await deleteActivity(id);
+};
+
+/* ---------- weekly analysis ---------- */
+state.weekOffset = 0;
+function getSundayOf(dateStr){
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate() - d.getDay()); // getDay: 0=Sunday
+  return d;
+}
+function getWeekDates(offset){
+  const sunday = getSundayOf(todayStr());
+  sunday.setDate(sunday.getDate() + offset*7);
+  const dates = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(sunday);
+    d.setDate(d.getDate()+i);
+    dates.push(d.toISOString().slice(0,10));
+  }
+  return dates;
+}
+async function computeWeekStats(offset){
+  const dates = getWeekDates(offset);
+  const target = state.profile.targets.target; // used only as the chart's reference line / current target
+  let days = [];
+  let totalFood=0, totalBurned=0, totalNet=0, daysWithData=0, daysMet=0;
+  for(const d of dates){
+    const log = await loadDay(d);
+    const food = (log.entries||[]).reduce((s,e)=>s+e.total_calories,0);
+    const burned = (log.activities||[]).reduce((s,a)=>s+a.calories,0);
+    const net = food - burned;
+    const dayTarget = getEffectiveTarget(log);
+    const hasData = (log.entries||[]).length>0 || (log.activities||[]).length>0;
+    if(hasData){ daysWithData++; totalFood+=food; totalBurned+=burned; totalNet+=net; if(net<=dayTarget) daysMet++; }
+    days.push({date:d, food, burned, net, hasData, target: dayTarget});
+  }
+  const weightLog = loadWeightLog();
+  const weekWeights = weightLog.filter(w=>w.date>=dates[0] && w.date<=dates[6]);
+  let weightChange = null;
+  if(weekWeights.length>=2) weightChange = weekWeights[weekWeights.length-1].weight - weekWeights[0].weight;
+  return {
+    dates, days, target,
+    avgNet: daysWithData ? Math.round(totalNet/daysWithData) : 0,
+    avgFood: daysWithData ? Math.round(totalFood/daysWithData) : 0,
+    totalBurned, daysWithData, daysMet,
+    weightChange
+  };
+}
+
+const weeklyOverlay = document.getElementById('weeklyOverlay');
+document.getElementById('weeklyBtn').onclick = async ()=>{
+  state.weekOffset = 0;
+  await renderWeeklyModal();
+  weeklyOverlay.classList.add('show');
+};
+document.getElementById('closeWeeklyBtn').onclick = ()=>weeklyOverlay.classList.remove('show');
+weeklyOverlay.addEventListener('click', (e)=>{ if(e.target===weeklyOverlay) weeklyOverlay.classList.remove('show'); });
+document.getElementById('wkPrev').onclick = async ()=>{ state.weekOffset--; await renderWeeklyModal(); };
+document.getElementById('wkNext').onclick = async ()=>{
+  if(state.weekOffset>=0) return;
+  state.weekOffset++; await renderWeeklyModal();
+};
+
+async function renderWeeklyModal(){
+  const stats = await computeWeekStats(state.weekOffset);
+  const prevStats = await computeWeekStats(state.weekOffset-1);
+
+  // label
+  const startD = new Date(stats.dates[0]+'T00:00:00');
+  const endD = new Date(stats.dates[6]+'T00:00:00');
+  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const lbl = state.weekOffset===0 ? 'هذا الأسبوع' :
+    `${startD.getDate()} ${months[startD.getMonth()]} – ${endD.getDate()} ${months[endD.getMonth()]}`;
+  document.getElementById('wkLabel').textContent = lbl;
+  document.getElementById('wkNext').disabled = state.weekOffset>=0;
+
+  // stat grid
+  const grid = document.getElementById('weekStatsGrid');
+  grid.innerHTML = `
+    <div class="week-stat"><div class="val">${stats.avgNet}</div><div class="lbl">متوسط الصافي/يوم</div></div>
+    <div class="week-stat"><div class="val">${stats.daysMet}/${stats.daysWithData||0}</div><div class="lbl">أيام ضمن الهدف</div></div>
+    <div class="week-stat"><div class="val">${stats.totalBurned}</div><div class="lbl">إجمالي الحرق بالنشاط</div></div>
+    <div class="week-stat"><div class="val">${stats.weightChange!==null ? (stats.weightChange>0?'+':'')+stats.weightChange.toFixed(1) : '–'}</div><div class="lbl">تغيّر الوزن (كجم)</div></div>
+  `;
+
+  // bar chart
+  renderWeekChart(stats);
+
+  // per-day list
+  const dayNames = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  const listEl = document.getElementById('weekDaysList');
+  listEl.innerHTML = stats.days.map((d,i)=>{
+    const icon = !d.hasData ? '·' : (d.net<=d.target ? '✓' : '✕');
+    const color = !d.hasData ? 'color:var(--muted);' : (d.net<=d.target ? 'color:var(--teal-dark);' : 'color:var(--red);');
+    return `<div class="week-day-row">
+      <span class="wd-status" style="${color}">${icon}</span>
+      <span style="flex:1;margin-inline-start:8px;">${dayNames[i]}</span>
+      <span style="color:var(--muted);">${d.hasData ? d.net+' سعرة' : 'لا بيانات'}</span>
+    </div>`;
+  }).join('');
+
+  // comparison to previous week
+  const cmp = document.getElementById('weekCompare');
+  if(prevStats.daysWithData===0){
+    cmp.innerHTML = `لا توجد بيانات كافية للأسبوع السابق للمقارنة.`;
+  }else{
+    const netDiff = stats.avgNet - prevStats.avgNet;
+    const netDiffStr = (netDiff>0?'+':'')+netDiff;
+    let weightCmp = '';
+    if(stats.weightChange!==null && prevStats.weightChange!==null){
+      const wDiff = stats.weightChange - prevStats.weightChange;
+      weightCmp = `<br>تغيّر الوزن مقارنةً بالأسبوع السابق: <b>${(wDiff>0?'+':'')+wDiff.toFixed(1)} كجم</b>`;
+    }
+    cmp.innerHTML = `متوسط صافي السعرات مقارنةً بالأسبوع السابق: <b>${netDiffStr} سعرة/يوم</b> (كان ${prevStats.avgNet})${weightCmp}`;
+  }
+}
+
+function renderWeekChart(stats){
+  const wrap = document.getElementById('weekChartWrap');
+  const W=320, H=140, padL=30, padR=10, padT=14, padB=20;
+  const target = stats.target;
+  const values = stats.days.map(d=>d.hasData ? d.net : 0);
+  const maxVal = Math.max(target*1.2, ...values, 1);
+  const barW = (W-padL-padR)/7 * 0.6;
+  const step = (W-padL-padR)/7;
+  const yFor = v => padT + (H-padT-padB) * (1 - v/maxVal);
+  const targetY = yFor(target);
+  const dayNames = ['ح','ن','ث','ر','خ','ج','س'];
+
+  const bars = stats.days.map((d,i)=>{
+    const x = padL + i*step + (step-barW)/2;
+    const v = d.hasData ? d.net : 0;
+    const y = yFor(v);
+    const h = (H-padB) - y;
+    const color = !d.hasData ? '#E2E8E5' : (v<=d.target ? '#0E6659' : '#C1443B');
+    return `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(h,0)}" rx="3" fill="${color}"/>
+      <text x="${x+barW/2}" y="${H-6}" font-size="9" fill="#63756F" text-anchor="middle">${dayNames[i]}</text>`;
+  }).join('');
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" dir="ltr">
+    <line x1="${padL}" y1="${targetY}" x2="${W-padR}" y2="${targetY}" stroke="#C08A3B" stroke-width="1.2" stroke-dasharray="4,3"/>
+    <text x="${W-padR}" y="${targetY-4}" font-size="8.5" fill="#8A5A16" text-anchor="end">الهدف الحالي ${target}</text>
+    ${bars}
+  </svg>`;
+}
+
+/* ---------- init ---------- */
+(async function init(){
+  state.profile = await loadProfile();
+  if(!state.profile){
+    document.getElementById('targetLine').textContent = 'أكمل ملفك الشخصي للبدء';
+    openProfileModal(); // first run: modal has no close button until saved
+  }else{
+    renderHeader();
+    await refreshDay();
+  }
+})();
+</script>
+</body>
+</html>
